@@ -1,0 +1,76 @@
+import pygame
+import cv2
+import tkinter as tk
+from tkinter import messagebox
+
+pygame.init()
+
+
+window_width = 540
+window_height = 540
+
+window = pygame.display.set_mode((window_width, window_height))
+
+clock = pygame.time.Clock()
+
+video_paths = {
+    'a': "a-part1.mp4",
+    'z': "z-part1.mp4",
+    'y': "y-part1.mp4",
+    'c': "c-part1.mp4",
+    'n': "n-part1.mp4",
+    'q': "q-part1.mp4",
+}
+
+video_captures = {key: cv2.VideoCapture(path) for key, path in video_paths.items()}
+is_video_playing = False
+sequence = []
+is_correct_sequence = False
+
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            key = pygame.key.name(event.key)
+            if key in video_paths:
+                sequence.append(key)
+                is_video_playing = True
+            else:
+
+                sequence = []
+                is_video_playing = False
+                messagebox.showinfo("Game Over", "You lost!")
+
+    if is_video_playing:
+        if sequence == ['a', 'z', 'y', 'c', 'n', 'q']:
+            is_correct_sequence = True
+
+        key = sequence[-1]
+        video_capture = video_captures[key]
+
+        ret, frame = video_capture.read()
+
+        if ret:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = cv2.resize(frame, (window_width, window_height))
+            pygame_frame = pygame.surfarray.make_surface(frame)
+            window.blit(pygame_frame, (0, 0))
+        else:
+            is_video_playing = False
+            video_capture.release()
+
+            if is_correct_sequence and key == 'q':
+                messagebox.showinfo("Game Over", "You won!")
+            elif not is_correct_sequence:
+                messagebox.showinfo("Game Over", "You lost!")
+
+    pygame.display.flip()
+
+    clock.tick(30)
+
+for video_capture in video_captures.values():
+    video_capture.release()
+
+pygame.quit()
